@@ -78,7 +78,7 @@ int add_word(WordCount **wclist, char *word) {
     last = wc;
   }
   WordCount *elem = malloc(sizeof(WordCount));
-  if (!elem) return 1;
+  if (elem == NULL) return 1;
   elem->count = 1;
   elem->word = new_string(word);
   elem->next = NULL;
