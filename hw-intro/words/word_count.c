@@ -81,6 +81,7 @@ int add_word(WordCount **wclist, char *word) {
   if (elem == NULL) return 1;
   elem->count = 1;
   elem->word = new_string(word);
+  if (elem->word == NULL) return 1;
   elem->next = NULL;
   if (*wclist) last->next = elem;
   else *wclist = elem;
