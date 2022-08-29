@@ -47,9 +47,15 @@ WordCount *word_counts = NULL;
 int num_words(FILE* infile) {
   int num_words = 0;
   if (infile == NULL) return num_words;
-  char str[MAX_WORD_LEN + 1];
-  while (fscanf(infile, "%64s", str) == 1) {
-    num_words++;
+  char c = fgetc(infile);
+  while (c != EOF) {
+    int cur_len = 0;
+    while (isalpha(c)) {
+      cur_len++;
+      c = fgetc(infile);
+    }
+    if (cur_len > 1) num_words++;
+    c = fgetc(infile);
   }
   return num_words;
 }
@@ -155,6 +161,7 @@ int main (int argc, char *argv[]) {
     // found at argv[argc-1].
     for (i = optind; i < argc; i++) {
       infile = fopen(argv[i], "r");
+      if (infile == NULL) return 1;
       if (count_mode) total_words += num_words(infile);
       else count_words(&word_counts, infile);
     }

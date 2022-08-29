@@ -46,10 +46,10 @@ ssize_t len_words(WordCount *wchead) {
      encountered in the body of
      this function.
   */
-    size_t len = 0;
-    WordCount *wc;
-    for (wc = wchead; wc; wc = wc->next) len++;
-    return len;
+  size_t len = 0;
+  WordCount *wc;
+  for (wc = wchead; wc; wc = wc->next) len++;
+  return len;
 }
 
 WordCount *find_word(WordCount *wchead, char *word) {
@@ -78,6 +78,7 @@ int add_word(WordCount **wclist, char *word) {
     last = wc;
   }
   WordCount *elem = malloc(sizeof(WordCount));
+  if (!elem) return 1;
   elem->count = 1;
   elem->word = new_string(word);
   elem->next = NULL;
