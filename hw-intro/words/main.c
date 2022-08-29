@@ -91,7 +91,10 @@ int count_words(WordCount **wclist, FILE *infile) {
       c = fgetc(infile);
     }
     str[cur_len] = '\0';
-    if (cur_len > 1) add_word(wclist, str);;
+    if (cur_len > 1) {
+      int result = add_word(wclist, str);
+      if (result == 1) return 1;
+    }
     c = fgetc(infile);
   }
   return 0;
