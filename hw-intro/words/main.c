@@ -73,12 +73,26 @@ int num_words(FILE* infile) {
  */
 int count_words(WordCount **wclist, FILE *infile) {
   if (wclist == NULL || infile == NULL) return 1;
+  // char str[MAX_WORD_LEN + 1];
+  // while (fscanf(infile, "%64s", str) == 1) {
+  //   for (int i = 0; i < strlen(str); i++) {
+  //     str[i] = tolower(str[i]);
+  //   }
+  //   add_word(wclist, str);
+  // }
   char str[MAX_WORD_LEN + 1];
-  while (fscanf(infile, "%64s", str) == 1) {
-    for (int i = 0; i < strlen(str); i++) {
-      str[i] = tolower(str[i]);
+  char c = fgetc(infile);
+  while (c != EOF) {
+    int cur_len = 0;
+    while (isalpha(c)) {
+      str[cur_len] = tolower(c);
+      // puts(str);
+      cur_len++;
+      c = fgetc(infile);
     }
-    add_word(wclist, str);
+    str[cur_len] = '\0';
+    if (cur_len > 1) add_word(wclist, str);;
+    c = fgetc(infile);
   }
   return 0;
 }
