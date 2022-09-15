@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
         exit(-1);
       }
       args->file_ptr = f;
-      printf("main: creating thread %ld\n", t);
+      // printf("main: creating thread %ld\n", t);
       rc = pthread_create(&threads[t], NULL, count_words_helper, (void*)args);
       if (rc) {
         printf("ERROR; return code from pthread_create() is %d\n", rc);
