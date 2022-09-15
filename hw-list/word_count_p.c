@@ -50,14 +50,11 @@ word_count_t* find_word(word_count_list_t* wclist, char* word) {
 }
 
 word_count_t* add_word(word_count_list_t* wclist, char* word) {
-  int re;
+  int re = pthread_mutex_lock(&wclist->lock);
+  if (re != 0) exit(re);
   word_count_t* to_add = find_word(wclist, word);
   if (to_add) {
-    re = pthread_mutex_lock(&wclist->lock);
-    if (re != 0) exit(re);
-    to_add->count++;
-    re = pthread_mutex_unlock(&wclist->lock);
-    if (re != 0) exit(re);
+    ++(to_add->count);
   } else {
     to_add = malloc(sizeof(word_count_t));
     if (!to_add) return NULL;
@@ -65,12 +62,10 @@ word_count_t* add_word(word_count_list_t* wclist, char* word) {
     if (!to_add->word) return NULL;
     strncpy(to_add->word, word, strlen(word) + 1);
     to_add->count = 1;
-    re = pthread_mutex_lock(&wclist->lock);
-    if (re != 0) exit(re);
     list_push_back(&wclist->lst, &to_add->elem);
-    re = pthread_mutex_unlock(&wclist->lock);
-    if (re != 0) exit(re);
   }
+  re = pthread_mutex_unlock(&wclist->lock);
+  if (re != 0) exit(re);
   return to_add;
 }
 
