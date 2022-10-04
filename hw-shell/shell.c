@@ -30,6 +30,8 @@ pid_t shell_pgid;
 
 int cmd_exit(struct tokens* tokens);
 int cmd_help(struct tokens* tokens);
+int cmd_pwd(struct tokens* tokens);
+int cmd_cd(struct tokens* tokens);
 
 /* Built-in command functions take token array (see parse.h) and return int */
 typedef int cmd_fun_t(struct tokens* tokens);
@@ -44,6 +46,8 @@ typedef struct fun_desc {
 fun_desc_t cmd_table[] = {
     {cmd_help, "?", "show this help menu"},
     {cmd_exit, "exit", "exit the command shell"},
+    {cmd_pwd, "pwd", "prints the current working directory"},
+    {cmd_cd, "cd", "changes the current working directory"},
 };
 
 /* Prints a helpful description for the given command */
@@ -55,6 +59,43 @@ int cmd_help(unused struct tokens* tokens) {
 
 /* Exits this shell */
 int cmd_exit(unused struct tokens* tokens) { exit(0); }
+
+/* Prints the current working directory */
+int cmd_pwd(unused struct tokens* tokens) {
+  char *pwd = getcwd(NULL, 0);
+  printf("%s\n", pwd);
+  free(pwd);
+  return 0;
+}
+
+/* Changes the current working directory to the specified path */
+int cmd_cd(struct tokens* tokens) {
+  size_t len_tokens = tokens_get_length(tokens);
+  if (len_tokens > 2) {
+    printf("too many arguments");
+    return -1;
+  } else if (len_tokens == 1) {
+    return chdir(getenv("HOME"));
+  } else {
+    int ret = chdir(tokens_get_token(tokens, 1));
+    if (ret == 0) return 0;
+    switch (errno) {
+      case ENOTDIR:
+        printf("Not a directory\n");
+        break;
+      case ENOENT:
+        printf("No such file or directory\n");
+        break;
+      case EACCES:
+        printf("Search permission denied\n");
+        break;
+      default:
+        printf("An I/O error occurred\n");
+        break;
+    }
+    return -1;
+  }
+}
 
 /* Looks up the built-in command, if it exists. */
 int lookup(char cmd[]) {
@@ -107,11 +148,94 @@ int main(unused int argc, unused char* argv[]) {
     /* Find which built-in function to run. */
     int fundex = lookup(tokens_get_token(tokens, 0));
 
-    if (fundex >= 0) {
+    if (fundex >= 0) { // run built-in commands
       cmd_table[fundex].fun(tokens);
-    } else {
-      /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+    } else { // run commands as programs
+      pid_t pid = fork();
+      if (pid == 0) { // child process
+        // process arguments (__argv)
+        size_t len_tokens = tokens_get_length(tokens);
+        bool redir_input = false, redir_output = false;
+        char *args[len_tokens + 1];
+        for (int i = 0; i < len_tokens; i++) {
+          char *token = tokens_get_token(tokens, i);
+          if (strcmp(token, "<") == 0) { // redirect input
+            redir_input = true;
+            int fd = open(tokens_get_token(tokens, i+1), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+            dup2(fd, 0);
+            close(fd);
+            i++; // skip as we have processed it
+          } else if (strcmp(token, ">") == 0) { // redirect output
+            redir_output = true;
+            int fd = open(tokens_get_token(tokens, i+1), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+            dup2(fd, 1);
+            close(fd);
+            i++; // skip as we have processed it
+          } else { // normal arguments
+            args[i] = token;
+          }
+        }
+        args[len_tokens - 2 * redir_input - 2 * redir_output] = NULL;
+
+        // process program path resolution (__path)
+        char *prog = tokens_get_token(tokens, 0);
+        int ret = 0;
+        if (prog[0] == '/') { // absolute path
+          ret = execv(prog, args);
+        } else if (prog[0] == '.') { // path in CWD
+          char *real_path = realpath(prog, NULL);
+          if (real_path) {
+            ret = execv(real_path, args);
+            free(real_path);
+          } else {
+            printf("Error resolving path\n");
+            exit(-1);
+          }
+        } else { // find from PATH env
+          char *path_env = getenv("PATH");
+          struct tokens* paths = tokenize(path_env);
+          for (size_t i = 0; i < tokens_get_length(paths); i++) {
+            // build the absolute path string
+            char abs_path[4096];
+            char *dir = tokens_get_token(paths, i);
+            strcpy(abs_path, dir);
+            abs_path[strlen(dir)] = '/';
+            abs_path[strlen(dir) + 1] = '\0';
+            strcat(abs_path, prog);
+            // printf("Searching in: %s\n", abs_path);
+            // check if the program exists
+            if (access(abs_path, F_OK) == 0) {
+              tokens_destroy(paths);
+              ret = execv(abs_path, args);
+            }
+          }
+          printf("command not found\n");
+        }
+
+        // handle error cases
+        if (ret == -1) {
+          switch (errno) {
+            case EISDIR:
+              printf("Is a directory\n");
+              break;
+            case ENOTDIR:
+              printf("A component of the path prefix is not a directory\n");
+              break;
+            case ENOENT:
+              printf("No such file or directory\n");
+              break;
+            case EACCES:
+              printf("Access denied\n");
+              break;
+            default:
+              printf("An I/O error occurred\n");
+              break;
+          }
+        }
+        exit(ret);
+      } else { // parent process
+        waitpid(pid, NULL, 0);
+      }
     }
 
     if (shell_is_interactive)
