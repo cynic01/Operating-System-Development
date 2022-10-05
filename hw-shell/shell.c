@@ -115,6 +115,10 @@ void init_shell() {
 
     /* Save the current termios to a variable, so it can be restored later. */
     tcgetattr(shell_terminal, &shell_tmodes);
+
+    signal(SIGTTOU, SIG_IGN);
+    signal(SIGINT, SIG_IGN);
+    signal(SIGTSTP, SIG_IGN);
   }
 }
 
@@ -140,6 +144,12 @@ int main(unused int argc, unused char* argv[]) {
     } else { // run commands as programs
       pid_t pid = fork();
       if (pid == 0) { // child process
+        setpgid(0, 0);
+        signal(SIGTTOU, SIG_IGN);
+        if (tcsetpgrp(0, getpid())) perror("tcsetpgrp");
+        signal(SIGTTOU, SIG_DFL);
+        signal(SIGINT, SIG_DFL);
+        signal(SIGTSTP, SIG_DFL);
         // process arguments (__argv)
         size_t len_tokens = tokens_get_length(tokens);
         // bool redir_input = false, redir_output = false;
@@ -164,6 +174,12 @@ int main(unused int argc, unused char* argv[]) {
             pipe(pipefd);
             pid_t pid_pipe = fork();
             if (pid_pipe == 0) { // child process
+              setpgid(0, 0);
+              signal(SIGTTOU, SIG_IGN);
+              if (tcsetpgrp(0, getpid())) perror("tcsetpgrp");
+              signal(SIGTTOU, SIG_DFL);
+              signal(SIGINT, SIG_DFL);
+              signal(SIGTSTP, SIG_DFL);
               close(pipefd[1]);
               dup2(pipefd[0], 0);
               close(pipefd[0]);
@@ -213,12 +229,13 @@ int main(unused int argc, unused char* argv[]) {
             }
           }
         }
-        
+
         // handle error cases
         perror("exec");
         exit(-1);
       } else { // parent process
         waitpid(pid, NULL, 0);
+        if (tcsetpgrp(0, getpgid(0))) perror("tcsetpgrp");
       }
     }
 
