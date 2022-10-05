@@ -79,20 +79,7 @@ int cmd_cd(struct tokens* tokens) {
   } else {
     int ret = chdir(tokens_get_token(tokens, 1));
     if (ret == 0) return 0;
-    switch (errno) {
-      case ENOTDIR:
-        printf("Not a directory\n");
-        break;
-      case ENOENT:
-        printf("No such file or directory\n");
-        break;
-      case EACCES:
-        printf("Search permission denied\n");
-        break;
-      default:
-        printf("An I/O error occurred\n");
-        break;
-    }
+    perror("chdir");
     return -1;
   }
 }
@@ -155,37 +142,54 @@ int main(unused int argc, unused char* argv[]) {
       if (pid == 0) { // child process
         // process arguments (__argv)
         size_t len_tokens = tokens_get_length(tokens);
-        bool redir_input = false, redir_output = false;
+        // bool redir_input = false, redir_output = false;
+        size_t arg_count = 0;
         char *args[len_tokens + 1];
         for (int i = 0; i < len_tokens; i++) {
           char *token = tokens_get_token(tokens, i);
           if (strcmp(token, "<") == 0) { // redirect input
-            redir_input = true;
+            // redir_input = true;
             int fd = open(tokens_get_token(tokens, i+1), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
             dup2(fd, 0);
             close(fd);
             i++; // skip as we have processed it
           } else if (strcmp(token, ">") == 0) { // redirect output
-            redir_output = true;
+            // redir_output = true;
             int fd = open(tokens_get_token(tokens, i+1), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
             dup2(fd, 1);
             close(fd);
             i++; // skip as we have processed it
+          } else if (strcmp(token, "|") == 0) { // redirect output of parent, input of child
+            int pipefd[2];
+            pipe(pipefd);
+            pid_t pid_pipe = fork();
+            if (pid_pipe == 0) { // child process
+              close(pipefd[1]);
+              dup2(pipefd[0], 0);
+              close(pipefd[0]);
+              for (size_t j = 0; j < arg_count; j++) args[j] = NULL;
+              arg_count = 0;
+            } else { // parent process
+              close(pipefd[0]);
+              dup2(pipefd[1], 1);
+              close(pipefd[1]);
+              break;
+            }
           } else { // normal arguments
-            args[i] = token;
+            args[arg_count] = token;
+            arg_count++;
           }
         }
-        args[len_tokens - 2 * redir_input - 2 * redir_output] = NULL;
+        args[arg_count] = NULL;
 
         // process program path resolution (__path)
-        char *prog = tokens_get_token(tokens, 0);
-        int ret = 0;
+        char *prog = args[0];
         if (prog[0] == '/') { // absolute path
-          ret = execv(prog, args);
+          execv(prog, args);
         } else if (prog[0] == '.') { // path in CWD
           char *real_path = realpath(prog, NULL);
           if (real_path) {
-            ret = execv(real_path, args);
+            execv(real_path, args);
             free(real_path);
           } else {
             printf("Error resolving path\n");
@@ -202,37 +206,17 @@ int main(unused int argc, unused char* argv[]) {
             abs_path[strlen(dir)] = '/';
             abs_path[strlen(dir) + 1] = '\0';
             strcat(abs_path, prog);
-            // printf("Searching in: %s\n", abs_path);
             // check if the program exists
             if (access(abs_path, F_OK) == 0) {
               tokens_destroy(paths);
-              ret = execv(abs_path, args);
+              execv(abs_path, args);
             }
           }
-          printf("command not found\n");
         }
-
+        
         // handle error cases
-        if (ret == -1) {
-          switch (errno) {
-            case EISDIR:
-              printf("Is a directory\n");
-              break;
-            case ENOTDIR:
-              printf("A component of the path prefix is not a directory\n");
-              break;
-            case ENOENT:
-              printf("No such file or directory\n");
-              break;
-            case EACCES:
-              printf("Access denied\n");
-              break;
-            default:
-              printf("An I/O error occurred\n");
-              break;
-          }
-        }
-        exit(ret);
+        perror("exec");
+        exit(-1);
       } else { // parent process
         waitpid(pid, NULL, 0);
       }
