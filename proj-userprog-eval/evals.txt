@@ -1,1 +1,4 @@
 Name|Autograder ID (XXX)|Score|Comment
+Darren Wu|158|21|Worked on Argument Passing, very hard working and grinded through a lot of the stuff, go to office hours often to work together on the code, put in a lot of effort to know everything
+Andy Chen|126|22|Worked on Process Control Syscalls, goes to office hours almost every day to work on the stuff, came up with a lot of the ideas and know the code really well
+Cindy Park|138|17|Worked on File Operation Syscalls, seems to be very busy but also hard working, grinded through the content with a lot of effort, but tend to do assignments a bit late, it's a shame that she's dropping the class
