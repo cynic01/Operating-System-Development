@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/sendfile.h>
 #include <unistd.h>
 #include <unistd.h>
 
@@ -39,11 +40,25 @@ void serve_file(int fd, char* path) {
 
   /* TODO: PART 2 */
   /* PART 2 BEGIN */
+  int file = open(path, O_RDONLY);
+  if (file == -1) {
+    perror("Failed to open file");
+    return;
+  }
+  struct stat file_stat;
+  fstat(fd, &file_stat);
+  char content_length_buf[21];
+  snprintf(content_length_buf, 21, "%ld", file_stat.st_size);
 
   http_start_response(fd, 200);
   http_send_header(fd, "Content-Type", http_get_mime_type(path));
-  http_send_header(fd, "Content-Length", "0"); // TODO: change this line too
+  http_send_header(fd, "Content-Length", content_length_buf); // TODO: change this line too
   http_end_headers(fd);
+
+  if (sendfile(fd, file, NULL, file_stat.st_size) == -1) {
+    perror("Error while sendfile");
+  }
+  close(file);
 
   /* PART 2 END */
 }
@@ -117,7 +132,17 @@ void handle_files_request(int fd) {
    */
 
   /* PART 2 & 3 BEGIN */
-
+  struct stat path_stat;
+  stat(path, &path_stat);
+  if (S_ISREG(path_stat.st_mode)) {
+    serve_file(fd, path);
+  } else if (S_ISDIR(path_stat.st_mode)) {
+    serve_directory(fd, path);
+  } else {
+    http_start_response(fd, 404);
+    http_send_header(fd, "Content-Type", "text/html");
+    http_end_headers(fd);
+  }
   /* PART 2 & 3 END */
 
   close(fd);
@@ -263,7 +288,14 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
    */
 
   /* PART 1 BEGIN */
-
+  if (bind(*socket_number, &server_address, sizeof(server_address)) == -1) {
+    perror("Failed to bind socket");
+    exit(errno);
+  }
+  if (listen(*socket_number, 1024) == -1) {
+    perror("Failed to listen on socket");
+    exit(errno);
+  }
   /* PART 1 END */
   printf("Listening on port %d...\n", server_port);
 
