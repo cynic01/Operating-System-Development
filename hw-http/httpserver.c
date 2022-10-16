@@ -64,28 +64,36 @@ void serve_file(int fd, char* path) {
 }
 
 void serve_directory(int fd, char* path) {
-  http_start_response(fd, 200);
-  http_send_header(fd, "Content-Type", http_get_mime_type(".html"));
-  http_end_headers(fd);
-
   /* TODO: PART 3 */
   /* PART 3 BEGIN */
   char test_index[strlen(path) + 12];
-  strcpy(test_index, path);
-  strcat(test_index, "/index.html");
+  http_format_index(test_index, path);
   if (access(test_index, F_OK) == 0) {
     serve_file(fd, test_index);
     return;
   }
 
+  http_start_response(fd, 200);
+  http_send_header(fd, "Content-Type", http_get_mime_type(".html"));
+  http_end_headers(fd);
+
   // TODO: Open the directory (Hint: opendir() may be useful here)
+  DIR *dir = opendir(path);
 
   /**
    * TODO: For each entry in the directory (Hint: look at the usage of readdir() ),
    * send a string containing a properly formatted HTML. (Hint: the http_format_href()
    * function in libhttp.c may be useful here)
    */
-
+  struct dirent *dir_list;
+  while (dir_list = readdir(dir)) {
+    char buf[8192];
+    http_format_href(buf, path, dir_list->d_name);
+    size_t buf_len = strlen(buf);
+    buf[buf_len] = '\n';
+    buf[buf_len+1] = '\0';
+    write(fd, buf, strlen(buf));
+  }
   /* PART 3 END */
 }
 
