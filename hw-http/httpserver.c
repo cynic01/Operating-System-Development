@@ -184,6 +184,7 @@ void *proxy_routine(void *args) {
         pthread_exit(errno);
       }
     } else {
+      close(arg_unpack->to);
       pthread_exit(0);
     }
     memset(buf, 0, 16384);
@@ -395,7 +396,9 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
      */
 
     /* PART 5 BEGIN */
-
+    if (fork() == 0) { // Child process
+      request_handler(client_socket_number);
+    }
     /* PART 5 END */
 
 #elif THREADSERVER
@@ -410,7 +413,8 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
      */
 
     /* PART 6 BEGIN */
-
+    pthread_t child_thread;
+    pthread_create(child_thread, NULL, &request_handler, client_socket_number);
     /* PART 6 END */
 #elif POOLSERVER
     /*
