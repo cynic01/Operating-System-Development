@@ -164,6 +164,32 @@ void handle_files_request(int fd) {
   return;
 }
 
+struct arg_struct {
+  int from;
+  int to;
+};
+
+void *proxy_routine(void *args) {
+  // unpack args
+  struct arg_struct *arg_unpack = (struct arg_struct *) args;
+  char buf[16384] = {0};
+  while (1) {
+    ssize_t size = read(arg_unpack->from, buf, 16384);
+    // printf("Got size %ld read from %d\n", size, arg_unpack->from);
+    if (size > 0) {
+      ssize_t write_size = write(arg_unpack->to, buf, strlen(buf));
+      // printf("Writing size %ld to %d\n", write_size, arg_unpack->to);
+      if (write_size == -1) {
+        perror("Error writing to file descriptor");
+        pthread_exit(errno);
+      }
+    } else {
+      pthread_exit(0);
+    }
+    memset(buf, 0, 16384);
+  }
+}
+
 /*
  * Opens a connection to the proxy target (hostname=server_proxy_hostname and
  * port=server_proxy_port) and relays traffic to/from the stream fd and the
@@ -227,7 +253,19 @@ void handle_proxy_request(int fd) {
 
   /* TODO: PART 4 */
   /* PART 4 BEGIN */
-
+  pthread_t client_to_server, server_to_client;
+  struct arg_struct *cts_args = malloc(sizeof(struct arg_struct));
+  struct arg_struct *stc_args = malloc(sizeof(struct arg_struct));
+  cts_args->from = fd;
+  cts_args->to = target_fd;
+  stc_args->from = target_fd;
+  stc_args->to = fd;
+  pthread_create(&client_to_server, NULL, &proxy_routine, cts_args);
+  pthread_create(&server_to_client, NULL, &proxy_routine, stc_args);
+  pthread_join(client_to_server, NULL);
+  pthread_join(server_to_client, NULL);
+  free(cts_args);
+  free(stc_args);
   /* PART 4 END */
 }
 
