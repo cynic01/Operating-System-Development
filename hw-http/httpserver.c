@@ -46,7 +46,7 @@ void serve_file(int fd, char* path) {
     return;
   }
   struct stat file_stat;
-  fstat(fd, &file_stat);
+  fstat(file, &file_stat);
   char content_length_buf[21];
   snprintf(content_length_buf, 21, "%ld", file_stat.st_size);
 
@@ -70,6 +70,13 @@ void serve_directory(int fd, char* path) {
 
   /* TODO: PART 3 */
   /* PART 3 BEGIN */
+  char test_index[strlen(path) + 12];
+  strcpy(test_index, path);
+  strcat(test_index, "/index.html");
+  if (access(test_index, F_OK) == 0) {
+    serve_file(fd, test_index);
+    return;
+  }
 
   // TODO: Open the directory (Hint: opendir() may be useful here)
 
