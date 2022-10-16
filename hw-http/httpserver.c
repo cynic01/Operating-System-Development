@@ -164,14 +164,14 @@ void handle_files_request(int fd) {
   return;
 }
 
-struct arg_struct {
+struct proxy_arg_struct {
   int from;
   int to;
 };
 
 void *proxy_routine(void *args) {
   // unpack args
-  struct arg_struct *arg_unpack = (struct arg_struct *) args;
+  struct proxy_arg_struct *arg_unpack = (struct proxy_arg_struct *) args;
   char buf[16384] = {0};
   while (1) {
     ssize_t size = read(arg_unpack->from, buf, 16384);
@@ -255,8 +255,8 @@ void handle_proxy_request(int fd) {
   /* TODO: PART 4 */
   /* PART 4 BEGIN */
   pthread_t client_to_server, server_to_client;
-  struct arg_struct *cts_args = malloc(sizeof(struct arg_struct));
-  struct arg_struct *stc_args = malloc(sizeof(struct arg_struct));
+  struct proxy_arg_struct *cts_args = malloc(sizeof(struct proxy_arg_struct));
+  struct proxy_arg_struct *stc_args = malloc(sizeof(struct proxy_arg_struct));
   cts_args->from = fd;
   cts_args->to = target_fd;
   stc_args->from = target_fd;
@@ -300,6 +300,17 @@ void init_thread_pool(int num_threads, void (*request_handler)(int)) {
   /* PART 7 END */
 }
 #endif
+
+struct ts_arg_struct {
+  void (*request_handler)(int);
+  int client_socket_number;
+};
+
+void *thread_server_helper(void *args) {
+  struct ts_arg_struct *ts_args = (struct ts_arg_struct *) args;
+  ts_args->request_handler(ts_args->client_socket_number);
+  free(args);
+}
 
 /*
  * Opens a TCP stream socket on all interfaces with port number PORTNO. Saves
@@ -398,6 +409,7 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
     /* PART 5 BEGIN */
     if (fork() == 0) { // Child process
       request_handler(client_socket_number);
+      exit(0);
     }
     /* PART 5 END */
 
@@ -414,7 +426,10 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
 
     /* PART 6 BEGIN */
     pthread_t child_thread;
-    pthread_create(child_thread, NULL, &request_handler, client_socket_number);
+    struct ts_arg_struct *args = malloc(sizeof(struct ts_arg_struct));
+    args->request_handler = request_handler;
+    args->client_socket_number = client_socket_number;
+    pthread_create(&child_thread, NULL, &thread_server_helper, args);
     /* PART 6 END */
 #elif POOLSERVER
     /*
