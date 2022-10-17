@@ -86,7 +86,7 @@ void serve_directory(int fd, char* path) {
    * function in libhttp.c may be useful here)
    */
   struct dirent *dir_list;
-  while (dir_list = readdir(dir)) {
+  while ((dir_list = readdir(dir))) {
     char buf[8192];
     http_format_href(buf, path, dir_list->d_name);
     size_t buf_len = strlen(buf);
@@ -158,6 +158,7 @@ void handle_files_request(int fd) {
     http_send_header(fd, "Content-Type", "text/html");
     http_end_headers(fd);
   }
+  free(path);
   /* PART 2 & 3 END */
 
   close(fd);
@@ -181,11 +182,11 @@ void *proxy_routine(void *args) {
       // printf("Writing size %ld to %d\n", write_size, arg_unpack->to);
       if (write_size == -1) {
         perror("Error writing to file descriptor");
-        pthread_exit(errno);
+        return NULL;
       }
     } else {
       close(arg_unpack->to);
-      pthread_exit(0);
+      return NULL;
     }
     memset(buf, 0, 16384);
   }
@@ -317,6 +318,7 @@ void *thread_server_helper(void *args) {
   struct ts_arg_struct *ts_args = (struct ts_arg_struct *) args;
   ts_args->request_handler(ts_args->client_socket_number);
   free(args);
+  return NULL;
 }
 
 /*
@@ -360,7 +362,7 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
    */
 
   /* PART 1 BEGIN */
-  if (bind(*socket_number, &server_address, sizeof(server_address)) == -1) {
+  if (bind(*socket_number, (struct sockaddr *)&server_address, sizeof(server_address)) == -1) {
     perror("Failed to bind socket");
     exit(errno);
   }
@@ -415,8 +417,12 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
 
     /* PART 5 BEGIN */
     if (fork() == 0) { // Child process
+      close(*socket_number);
       request_handler(client_socket_number);
+      close(client_socket_number);
       exit(0);
+    } else {
+      close(client_socket_number);
     }
     /* PART 5 END */
 
