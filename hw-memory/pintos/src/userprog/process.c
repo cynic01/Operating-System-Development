@@ -227,6 +227,7 @@ bool load(const char* file_name, void (**eip)(void), void** esp) {
 
   /* Read program headers. */
   file_ofs = ehdr.e_phoff;
+  uint32_t mem_page, read_bytes, zero_bytes;
   for (i = 0; i < ehdr.e_phnum; i++) {
     struct Elf32_Phdr phdr;
 
@@ -253,9 +254,10 @@ bool load(const char* file_name, void (**eip)(void), void** esp) {
         if (validate_segment(&phdr, file)) {
           bool writable = (phdr.p_flags & PF_W) != 0;
           uint32_t file_page = phdr.p_offset & ~PGMASK;
-          uint32_t mem_page = phdr.p_vaddr & ~PGMASK;
+          // uint32_t mem_page = phdr.p_vaddr & ~PGMASK;
+          mem_page = phdr.p_vaddr & ~PGMASK;
           uint32_t page_offset = phdr.p_vaddr & PGMASK;
-          uint32_t read_bytes, zero_bytes;
+          // uint32_t read_bytes, zero_bytes;
           if (phdr.p_filesz > 0) {
             /* Normal segment.
                      Read initial part from disk and zero the rest. */
@@ -274,6 +276,8 @@ bool load(const char* file_name, void (**eip)(void), void** esp) {
         break;
     }
   }
+
+  t->heap_start = t->heap_break = ROUND_UP(mem_page + read_bytes + zero_bytes, PGSIZE);
 
   /* Set up stack. */
   if (!setup_stack(esp))
