@@ -93,19 +93,29 @@ static void *syscall_sbrk(intptr_t increment) {
       for (int i = 0; i < pages_needed; i++) {
         if (pagedir_get_page(t->pagedir, prev_page_boundary + i * PGSIZE) == NULL &&
             pagedir_set_page(t->pagedir, prev_page_boundary + i * PGSIZE, kpage, true)) {
-          // succesfully mapped page
+          // successfully mapped page
         } else {
+          // failed to map pages, clear already mapped pages and free
+          for (int j = 0; j < i; j++) {
+            pagedir_clear_page(t->pagedir, prev_page_boundary + j * PGSIZE);
+          }
           palloc_free_multiple(kpage, pages_needed);
-          break;
+          return (void*)-1;
         }
       }
     } else {
       // palloc failed
+      return (void*)-1;
     }
   } else { // pages needed < 0
     // deallocate pages
+    intptr_t kpage = pagedir_get_page(t->pagedir, new_page_boundary);
+    for (int i = 0; i < -pages_needed; i++) {
+      pagedir_clear_page(t->pagedir, new_page_boundary + i * PGSIZE);
+    }
+    palloc_free_multiple(kpage, -pages_needed);
   }
-  return old_brk;
+  return (void*)old_brk;
 }
 
 static void syscall_handler(struct intr_frame* f) {
