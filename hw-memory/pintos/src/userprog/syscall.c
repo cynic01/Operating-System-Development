@@ -82,10 +82,10 @@ static void *syscall_sbrk(intptr_t increment) {
   struct thread* t = thread_current();
   intptr_t old_brk = t->heap_break;
   if (increment == 0) return old_brk;
-  intptr_t prev_page_boundary = pg_round_up(t->heap_break);
-  t->heap_break += increment;
-  intptr_t new_page_boundary = pg_round_up(t->heap_break);
+  uint32_t prev_page_boundary = pg_round_up(t->heap_break);
+  uint32_t new_page_boundary = pg_round_up(t->heap_break + increment);
   intptr_t pages_needed = (new_page_boundary - prev_page_boundary) / PGSIZE;
+  // intptr_t pages_needed = increment / PGSIZE + (increment % PGSIZE > 0);
   if (pages_needed > 0) {
     // allocate pages
     intptr_t kpage = palloc_get_multiple(PAL_USER, pages_needed);
@@ -113,6 +113,7 @@ static void *syscall_sbrk(intptr_t increment) {
     }
     palloc_free_multiple(kpage, -pages_needed);
   }
+  t->heap_break += increment;
   return (void*)old_brk;
 }
 
