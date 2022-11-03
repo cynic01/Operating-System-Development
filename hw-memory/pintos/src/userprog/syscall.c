@@ -80,15 +80,14 @@ static void syscall_close(int fd) {
 
 static void *syscall_sbrk(intptr_t increment) {
   struct thread* t = thread_current();
-  intptr_t old_brk = t->heap_break;
+  uint32_t old_brk = t->heap_break;
   if (increment == 0) return old_brk;
   uint32_t prev_page_boundary = pg_round_up(t->heap_break);
   uint32_t new_page_boundary = pg_round_up(t->heap_break + increment);
-  intptr_t pages_needed = (new_page_boundary - prev_page_boundary) / PGSIZE;
-  // intptr_t pages_needed = increment / PGSIZE + (increment % PGSIZE > 0);
+  intptr_t pages_needed = (intptr_t) (((int64_t)new_page_boundary - (int64_t)prev_page_boundary) / PGSIZE);
   if (pages_needed > 0) {
     // allocate pages
-    intptr_t kpage = palloc_get_multiple(PAL_USER, pages_needed);
+    uint32_t kpage = palloc_get_multiple(PAL_USER, pages_needed);
     if (kpage != NULL) {
       for (int i = 0; i < pages_needed; i++) {
         ASSERT(pagedir_get_page(t->pagedir, prev_page_boundary + i * PGSIZE) == NULL);
@@ -107,7 +106,7 @@ static void *syscall_sbrk(intptr_t increment) {
     }
   } else { // pages needed < 0
     // deallocate pages
-    intptr_t kpage = pagedir_get_page(t->pagedir, new_page_boundary);
+    uint32_t kpage = pagedir_get_page(t->pagedir, new_page_boundary);
     for (int i = 0; i < -pages_needed; i++) {
       pagedir_clear_page(t->pagedir, new_page_boundary + i * PGSIZE);
     }
