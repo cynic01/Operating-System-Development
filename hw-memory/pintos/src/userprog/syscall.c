@@ -88,13 +88,11 @@ static void *syscall_sbrk(intptr_t increment) {
   intptr_t pages_needed = (new_page_boundary - prev_page_boundary) / PGSIZE;
   if (pages_needed > 0) {
     // allocate pages
-    intptr_t kpage = palloc_get_multiple(PAL_USER | PAL_ZERO, pages_needed);
+    intptr_t kpage = palloc_get_multiple(PAL_USER, pages_needed);
     if (kpage != NULL) {
       for (int i = 0; i < pages_needed; i++) {
-        if (pagedir_get_page(t->pagedir, prev_page_boundary + i * PGSIZE) == NULL &&
-            pagedir_set_page(t->pagedir, prev_page_boundary + i * PGSIZE, kpage, true)) {
-          // successfully mapped page
-        } else {
+        ASSERT(pagedir_get_page(t->pagedir, prev_page_boundary + i * PGSIZE) == NULL);
+        if (!pagedir_set_page(t->pagedir, prev_page_boundary + i * PGSIZE, kpage + i * PGSIZE, true)) {
           // failed to map pages, clear already mapped pages and free
           for (int j = 0; j < i; j++) {
             pagedir_clear_page(t->pagedir, prev_page_boundary + j * PGSIZE);
