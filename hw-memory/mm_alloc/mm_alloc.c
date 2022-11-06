@@ -123,7 +123,7 @@ void mm_free(void* ptr) {
     // coalesce next block
     struct metadata *next_free = free_ptr->next;
     free_ptr->size += metadata_size + next_free->size;
-    next_free->next->prev = free_ptr;
+    if (next_free->next) next_free->next->prev = free_ptr;
     free_ptr->next = next_free->next;
     memset((void*)free_ptr + metadata_size, 0, free_ptr->size);
   }
@@ -132,7 +132,7 @@ void mm_free(void* ptr) {
     struct metadata *prev_free = free_ptr->prev;
     prev_free->size += metadata_size + free_ptr->size;
     prev_free->next = free_ptr->next;
-    free_ptr->next->prev = prev_free;
+    if (free_ptr->next) free_ptr->next->prev = prev_free;
     memset((void*)prev_free + metadata_size, 0, prev_free->size);
   }
 }
