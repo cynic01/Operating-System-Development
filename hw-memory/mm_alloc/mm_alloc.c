@@ -111,6 +111,8 @@ void* mm_realloc(void* ptr, size_t size) {
     void *new = mm_malloc(size);
     if (new == NULL) {
       new = mm_malloc(old_size);
+      memcpy(new, tmp, old_size);
+      return NULL;
     }
     memcpy(new, tmp, old_size);
     return new;

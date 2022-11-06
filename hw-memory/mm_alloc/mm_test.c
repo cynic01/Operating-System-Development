@@ -70,9 +70,8 @@ int main() {
   assert(p != old_p);
   int *s = mm_malloc(10 * sizeof(int));
   assert(s == old_p);
-  int *new_p = p;
-  p = mm_realloc(p, 0xffffffff);
-  assert(p == new_p);
+  int *p_null = mm_realloc(p, 0xffffffff);
+  assert(p_null == NULL);
   mm_free(p);
   mm_free(q);
   mm_free(s);
