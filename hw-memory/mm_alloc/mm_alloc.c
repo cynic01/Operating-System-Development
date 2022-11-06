@@ -16,7 +16,6 @@ struct metadata {
   bool free;
   struct metadata *prev;
   struct metadata *next;
-  // uint32_t chunk[];
 };
 
 size_t metadata_size = sizeof(struct metadata);
@@ -47,7 +46,7 @@ void* mm_malloc(size_t size) {
         new->free = true;
         new->prev = el;
         new->next = el->next;
-        el->next->prev = new;
+        if (el->next) el->next->prev = new;
         el->size = size;
         el->free = false;
         el->next = new;
@@ -96,7 +95,7 @@ void* mm_realloc(void* ptr, size_t size) {
       new->free = true;
       new->prev = meta;
       new->next = meta->next;
-      meta->next->prev = new;
+      if (meta->next) meta->next->prev = new;
       meta->size = size;
       meta->free = false;
       meta->next = new;

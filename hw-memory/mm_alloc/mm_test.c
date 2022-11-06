@@ -39,17 +39,25 @@ int main() {
   // mm_free(data);
   // puts("malloc test successful!");
 
-  int *data1 = mm_malloc(sizeof(int));
+  char *data0 = mm_malloc(sizeof(char));
+  short *data1 = mm_malloc(sizeof(short));
   int *data2 = mm_malloc(sizeof(int));
+  long long *data3 = mm_malloc(sizeof(long long));
+  assert(data0 != NULL);
   assert(data1 != NULL);
   assert(data2 != NULL);
+  assert(data3 != NULL);
+  *data0 = 45;
   *data1 = 123;
   *data2 = 789;
-  mm_free(data1);
+  *data3 = 123456789;
+  mm_free(data3);
   mm_free(data2);
-  int *data_big = mm_malloc(2 * sizeof(int));
+  mm_free(data1);
+  mm_free(data0);
+  int *data_big = mm_malloc(15);
   assert(data_big != NULL);
-  assert(data1 == data_big);
+  assert(data0 == data_big);
   mm_free(data_big);
   puts("coalesce test successful!");
 }
