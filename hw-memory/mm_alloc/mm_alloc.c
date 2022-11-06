@@ -104,11 +104,12 @@ void* mm_realloc(void* ptr, size_t size) {
       return ptr;
     }
   } else {
-    char tmp[size];
-    memcpy(tmp, ptr, size);
+    size_t old_size = meta->size;
+    char tmp[old_size];
+    memcpy(tmp, ptr, old_size);
     mm_free(ptr);
     void *new = mm_malloc(size);
-    memcpy(new, tmp, size);
+    memcpy(new, tmp, old_size);
     return new;
   }
 }
