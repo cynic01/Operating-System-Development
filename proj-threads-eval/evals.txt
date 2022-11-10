@@ -1,1 +1,4 @@
 Name|Autograder ID (XXX)|Score|Comment
+Andy Chen|126|20|Worked on the alarm clock and user threads very hard, went to office hours regularly to resolve problems in the code
+Darren Wu|158|20|Worked on the priority scheduler part very hard, and helped out with user threads and alarm clock
+Ryan Whittaker|147|20|Worked on the user threads part very hard, came up with very good code and help debugging a lot
