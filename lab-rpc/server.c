@@ -64,3 +64,8 @@ int *example_1_svc(int *argp, struct svc_req *rqstp) {
 }
 
 /* TODO: Add additional RPC stubs. */
+char **echo_1_svc(char **argp, struct svc_req *rqstp) {
+  static char *result;
+  result = *argp;
+  return &result;
+}

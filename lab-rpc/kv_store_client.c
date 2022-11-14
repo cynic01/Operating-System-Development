@@ -40,6 +40,13 @@ char* echo(char* input) {
   char* ret;
 
   /* TODO */
+  char **result = echo_1(&input, clnt);
+  if (result == (char **)NULL) {
+    clnt_perror(clnt, "call failed");
+    exit(1);
+  }
+  ret = strdup(*result);
+  xdr_free((xdrproc_t)xdr_string, (char *)result);
 
   clnt_destroy(clnt);
   
