@@ -72,7 +72,7 @@ buf* get(buf key) {
 
   /* TODO */
   ret = get_1(&key, clnt);
-  if (ret == (buf *)NULL) {
+  if (ret == NULL) {
     clnt_perror(clnt, "call failed");
     exit(1);
   }

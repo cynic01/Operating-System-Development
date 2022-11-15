@@ -94,6 +94,9 @@ buf *get_1_svc(buf *argp, struct svc_req *rqstp) {
     // result.buf_len = (int) len;
     // memcpy(result.buf_val, data, len);
     result.buf_val = g_bytes_get_data(value, &result.buf_len);
+  } else {
+    result.buf_len = 0;
+    result.buf_val = NULL;
   }
   return &result;
 }
