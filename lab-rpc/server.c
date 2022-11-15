@@ -83,11 +83,16 @@ void *put_1_svc(put_arg *argp, struct svc_req *rqstp) {
 
 /* TODO: Add additional RPC stubs. */
 buf *get_1_svc(buf *argp, struct svc_req *rqstp) {
-  static buf result;
+  static buf result = {0, NULL};
   GBytes *key = g_bytes_new(argp->buf_val, argp->buf_len);
   GBytes *value = g_hash_table_lookup(ht, key);
   g_bytes_unref(key);
   if (value != NULL) {
+    // gsize len;
+    // const char *data = g_bytes_get_data(value, &len);
+    // printf("%s\n", data);
+    // result.buf_len = (int) len;
+    // memcpy(result.buf_val, data, len);
     result.buf_val = g_bytes_get_data(value, &result.buf_len);
   }
   return &result;
