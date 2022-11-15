@@ -55,8 +55,12 @@ char* echo(char* input) {
 
 void put(buf key, buf value) {
   CLIENT *clnt = clnt_connect(HOST);
+  put_arg arg;
+  arg.key = key;
+  arg.value = value;
 
   /* TODO */
+  put_1(&arg, clnt);
 
   clnt_destroy(clnt);
 }
@@ -67,6 +71,11 @@ buf* get(buf key) {
   buf* ret;
 
   /* TODO */
+  ret = get_1(&key, clnt);
+  if (ret == (buf *)NULL) {
+    clnt_perror(clnt, "call failed");
+    exit(1);
+  }
 
   clnt_destroy(clnt);
   

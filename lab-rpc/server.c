@@ -17,6 +17,7 @@
 #endif
 
 /* TODO: Add global state. */
+GHashTable *ht;
 
 extern void kvstore_1(struct svc_req *, struct SVCXPRT *);
 
@@ -47,6 +48,7 @@ int main(int argc, char **argv) {
   }
 
   /* TODO: Initialize state. */
+  ht = g_hash_table_new(g_bytes_hash, g_bytes_equal);
 
   svc_run();
   fprintf(stderr, "%s", "svc_run returned");
@@ -67,5 +69,26 @@ int *example_1_svc(int *argp, struct svc_req *rqstp) {
 char **echo_1_svc(char **argp, struct svc_req *rqstp) {
   static char *result;
   result = *argp;
+  return &result;
+}
+
+/* TODO: Add additional RPC stubs. */
+void *put_1_svc(put_arg *argp, struct svc_req *rqstp) {
+  static void *result;
+  GBytes *key = g_bytes_new(argp->key.buf_val, argp->key.buf_len);
+  GBytes *value = g_bytes_new(argp->value.buf_val, argp->value.buf_len);
+  g_hash_table_insert(ht, key, value);
+  return &result;
+}
+
+/* TODO: Add additional RPC stubs. */
+buf *get_1_svc(buf *argp, struct svc_req *rqstp) {
+  static buf result;
+  GBytes *key = g_bytes_new(argp->buf_val, argp->buf_len);
+  GBytes *value = g_hash_table_lookup(ht, key);
+  g_bytes_unref(key);
+  if (value != NULL) {
+    result.buf_val = g_bytes_get_data(value, &result.buf_len);
+  }
   return &result;
 }
