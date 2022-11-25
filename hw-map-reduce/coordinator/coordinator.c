@@ -67,7 +67,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   result = init_job(job_ptr, argp);
   if (result == -1) return &result;
 
-  state->index_queue = g_list_append(state->index_queue, job_ptr);
+  state->wait_queue = g_list_append(state->wait_queue, job_ptr);
   g_hash_table_insert(state->jobs, GINT_TO_POINTER(job_ptr->id), job_ptr);
 
   /* Do not modify the following code. */
@@ -145,6 +145,8 @@ void coordinator_init(coordinator** coord_ptr) {
   coordinator* coord = *coord_ptr;
 
   /* TODO */
-  coord->index_queue = NULL;
+  coord->wait_queue = NULL;
+  coord->map_queue = NULL;
+  coord->reduce_queue = NULL;
   coord->jobs = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
 }

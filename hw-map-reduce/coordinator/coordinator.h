@@ -24,7 +24,9 @@
 
 typedef struct {
   /* TODO */
-  GList *index_queue;
+  GList *wait_queue;
+  GList *map_queue;
+  GList *reduce_queue;
   GHashTable *jobs;
 } coordinator;
 
