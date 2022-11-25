@@ -63,6 +63,12 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   printf("Received submit job request\n");
 
   /* TODO */
+  job *job_ptr = malloc(sizeof(job));
+  result = init_job(job_ptr, argp);
+  if (result == -1) return &result;
+
+  state->index_queue = g_list_append(state->index_queue, job_ptr);
+  g_hash_table_insert(state->jobs, GINT_TO_POINTER(job_ptr->id), job_ptr);
 
   /* Do not modify the following code. */
   /* BEGIN */
@@ -82,6 +88,25 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
   printf("Received poll job request\n");
 
   /* TODO */
+  int job_id = *argp;
+  job *lookup_job = g_hash_table_lookup(state->jobs, GINT_TO_POINTER(job_id));
+  if (lookup_job == NULL) {
+    result.done = false;
+    result.failed = false;
+    result.invalid_job_id = true;
+    return &result;
+  }
+  result.invalid_job_id = false;
+  if (lookup_job->job_status == DONE) {
+    result.done = true;
+  } else {
+    result.done = false;
+  }
+  if (lookup_job->job_status == FAILED) {
+    result.failed = true;
+  } else {
+    result.failed = false;
+  }
 
   return &result;
 }
@@ -120,4 +145,6 @@ void coordinator_init(coordinator** coord_ptr) {
   coordinator* coord = *coord_ptr;
 
   /* TODO */
+  coord->index_queue = NULL;
+  coord->jobs = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
 }
