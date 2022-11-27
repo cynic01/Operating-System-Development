@@ -23,10 +23,8 @@
 #include <sys/stat.h>
 
 typedef struct {
-  /* TODO */
-  GList *wait_queue;
-  GList *map_queue;
-  GList *reduce_queue;
+  GQueue *map_queue;
+  GQueue *reduce_queue;
   GHashTable *jobs;
 } coordinator;
 
