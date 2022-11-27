@@ -24,19 +24,17 @@ int init_job(job *job_ptr, submit_job_request* request) {
         job_ptr->files.files_val[i] = strdup(request->files.files_val[i]);
         if (job_ptr->files.files_val[i] == NULL) return -1;
     }
-    job_ptr->maps_given = malloc(request->files.files_len * sizeof(bool));
-    memset(job_ptr->maps_given, false, request->files.files_len);
-    job_ptr->maps_done = malloc(request->files.files_len * sizeof(bool));
-    memset(job_ptr->maps_done, false, request->files.files_len);
+    job_ptr->maps_given = calloc(request->files.files_len, sizeof(bool));
+    job_ptr->maps_start = calloc(request->files.files_len, sizeof(time_t));
+    job_ptr->maps_done = calloc(request->files.files_len, sizeof(bool));
 
     job_ptr->output_dir = strdup(request->output_dir);
     if (job_ptr->output_dir == NULL) return -1;
 
     job_ptr->n_reduce = request->n_reduce;
-    job_ptr->reduces_given = malloc(request->n_reduce * sizeof(bool));
-    memset(job_ptr->reduces_given, false, request->n_reduce);
-    job_ptr->reduces_done = malloc(request->n_reduce * sizeof(bool));
-    memset(job_ptr->reduces_done, false, request->n_reduce);
+    job_ptr->reduces_given = calloc(request->n_reduce, sizeof(bool));
+    job_ptr->reduces_start = calloc(request->n_reduce, sizeof(time_t));
+    job_ptr->reduces_done = calloc(request->n_reduce, sizeof(bool));
 
     job_ptr->args.args_len = request->args.args_len;
     job_ptr->args.args_val = strndup(request->args.args_val, request->args.args_len);

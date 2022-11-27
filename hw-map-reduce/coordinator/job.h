@@ -24,10 +24,12 @@ typedef struct {
 		path *files_val;
 	} files;
   bool *maps_given;
+  time_t *maps_start;
   bool *maps_done;
 	path output_dir;
   int n_reduce;
   bool *reduces_given;
+  time_t *reduces_start;
   bool *reduces_done;
   struct {
 		u_int args_len;

@@ -129,10 +129,11 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
     job_ptr = elem->data;
     g_assert_nonnull(job_ptr);
     for (int i = 0; i < job_ptr->n_reduce; i++) {
-      if (job_ptr->reduces_given[i] == false) {
+      if (job_ptr->reduces_given[i] == false || (time(NULL) - job_ptr->reduces_start[i]) > TASK_TIMEOUT_SECS) {
         // give reduce task i
         printf("Assigned job %d reduce task %d\n", job_ptr->job_id, i);
         job_ptr->reduces_given[i] = true;
+        job_ptr->reduces_start[i] = time(NULL);
         result.job_id = job_ptr->job_id;
         result.task = i;
         result.output_dir = job_ptr->output_dir;
@@ -152,10 +153,11 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
     job_ptr = elem->data;
     g_assert_nonnull(job_ptr);
     for (int i = 0; i < job_ptr->files.files_len; i++) {
-      if (job_ptr->maps_given[i] == false) {
+      if (job_ptr->maps_given[i] == false || (time(NULL) - job_ptr->maps_start[i]) > TASK_TIMEOUT_SECS) {
         // give map task i
         printf("Assigned job %d map task %d\n", job_ptr->job_id, i);
         job_ptr->maps_given[i] = true;
+        job_ptr->maps_start[i] = time(NULL);
         result.job_id = job_ptr->job_id;
         result.task = i;
         result.file = job_ptr->files.files_val[i];
