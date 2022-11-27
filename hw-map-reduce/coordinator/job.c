@@ -13,6 +13,7 @@ int init_job(job *job_ptr, submit_job_request* request) {
     next_id++;
     job_ptr->job_status = MAP;
 
+    if (get_app(request->app).name == NULL) return -1;
     job_ptr->app = strdup(request->app);
     if (job_ptr->app == NULL) return -1;
 

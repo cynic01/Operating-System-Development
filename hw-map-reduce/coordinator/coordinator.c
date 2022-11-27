@@ -125,8 +125,30 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
 
   /* TODO */
   job *job_ptr;
-  for (GList *elem = state->reduce_queue->head; elem; elem = elem->next) {
-    job_ptr = elem->data;
+  // for (GList *elem = state->reduce_queue->head; elem; elem = elem->next) {
+  //   job_ptr = elem->data;
+  //   for (int i = 0; i < job_ptr->n_reduce; i++) {
+  //     if (job_ptr->reduces_given[i] == false) {
+  //       // give reduce task i
+  //       printf("Assigned job %d reduce task %d\n", job_ptr->job_id, i);
+  //       job_ptr->reduces_given[i] = true;
+  //       result.job_id = job_ptr->job_id;
+  //       result.task = i;
+  //       result.output_dir = job_ptr->output_dir;
+  //       result.app = job_ptr->app;
+  //       result.n_reduce = job_ptr->n_reduce;
+  //       result.n_map = job_ptr->files.files_len;
+  //       result.reduce = true;
+  //       result.wait = false;
+  //       result.args.args_len = job_ptr->args.args_len;
+  //       result.args.args_val = job_ptr->args.args_val;
+  //       return &result;
+  //     }
+  //   }
+  // }
+  for (int i = 0; i < state->reduce_queue->length; i++) {
+    job_ptr = g_queue_peek_nth(state->reduce_queue, i);
+    g_assert_nonnull(job_ptr);
     for (int i = 0; i < job_ptr->n_reduce; i++) {
       if (job_ptr->reduces_given[i] == false) {
         // give reduce task i
@@ -166,8 +188,32 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
   //     }
   //   }
   // }
-  for (GList *elem = state->map_queue->head; elem; elem = elem->next) {
-    job_ptr = elem->data;
+
+  // for (GList *elem = state->map_queue->head; elem; elem = elem->next) {
+  //   job_ptr = elem->data;
+  //   for (int i = 0; i < job_ptr->files.files_len; i++) {
+  //     if (job_ptr->maps_given[i] == false) {
+  //       // give map task i
+  //       printf("Assigned job %d map task %d\n", job_ptr->job_id, i);
+  //       job_ptr->maps_given[i] = true;
+  //       result.job_id = job_ptr->job_id;
+  //       result.task = i;
+  //       result.file = job_ptr->files.files_val[i];
+  //       result.output_dir = job_ptr->output_dir;
+  //       result.app = job_ptr->app;
+  //       result.n_reduce = job_ptr->n_reduce;
+  //       result.n_map = job_ptr->files.files_len;
+  //       result.reduce = false;
+  //       result.wait = false;
+  //       result.args.args_len = job_ptr->args.args_len;
+  //       result.args.args_val = job_ptr->args.args_val;
+  //       return &result;
+  //     }
+  //   }
+  // }
+  for (int i = 0; i < state->map_queue->length; i++) {
+    job_ptr = g_queue_peek_nth(state->map_queue, i);
+    g_assert_nonnull(job_ptr);
     for (int i = 0; i < job_ptr->files.files_len; i++) {
       if (job_ptr->maps_given[i] == false) {
         // give map task i
@@ -234,7 +280,7 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
     }
     if (all_done) {
       printf("All job %d reduce tasks done\n", job_ptr->job_id);
-      g_assert(g_queue_pop_head(state->reduce_queue) == job_ptr);
+      g_assert(g_queue_remove(state->reduce_queue, job_ptr));
       job_ptr->job_status = DONE;
     }
   } else if (argp->reduce == false) {
@@ -248,7 +294,7 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
     }
     if (all_done) {
       printf("All job %d map tasks done\n", job_ptr->job_id);
-      g_assert(g_queue_pop_head(state->map_queue) == job_ptr);
+      g_assert(g_queue_remove(state->map_queue, job_ptr));
       job_ptr->job_status = REDUCE;
       g_queue_push_tail(state->reduce_queue, job_ptr);
     }
